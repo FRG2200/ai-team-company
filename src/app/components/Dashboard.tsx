@@ -4,6 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { AgentCard } from './AgentCard';
 import { TaskQueue } from './TaskQueue';
 import { SystemStatus } from './SystemStatus';
+import { RequestForm } from './RequestForm';
+import { UserCard } from './UserCard';
 
 // 7人のエージェント定義
 const agents = [
@@ -77,7 +79,7 @@ const generateMockLogs = (agentId: string) => {
   const logs: Record<string, string[]> = {
     takumi: [
       '> Analyzing request...',
-      '> Routing to Sho for architecture design',
+      '> Routing to appropriate team members',
       '> Monitoring progress...',
     ],
     misaki: ['> Standby mode', '> Waiting for task assignment'],
@@ -92,7 +94,7 @@ const generateMockLogs = (agentId: string) => {
 
 export const Dashboard: React.FC = () => {
   const [activeAgent, setActiveAgent] = useState('takumi');
-  const [currentTask, setCurrentTask] = useState('Landing Page Development');
+  const [currentRequest, setCurrentRequest] = useState('');
   const [progress, setProgress] = useState(0);
   const [logs, setLogs] = useState<Record<string, string[]>>({});
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -114,6 +116,8 @@ export const Dashboard: React.FC = () => {
 
   // シミュレーション：タスク進行
   useEffect(() => {
+    if (!currentRequest) return;
+
     const interval = setInterval(() => {
       setProgress((prev) => {
         if (prev >= 100) return 0;
@@ -132,7 +136,27 @@ export const Dashboard: React.FC = () => {
     }, 2000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [currentRequest]);
+
+  const handleRequestSubmit = (request: string) => {
+    setCurrentRequest(request);
+    setProgress(0);
+    setActiveAgent('takumi');
+    
+    // Takumiのログを更新
+    setLogs((prev) => ({
+      ...prev,
+      takumi: [
+        '> New request received',
+        `> "${request.substring(0, 50)}${request.length > 50 ? '...' : ''}"`,
+        '> Analyzing and routing...',
+      ],
+    }));
+  };
+
+  // Takumiと他のエージェントを分離
+  const takumi = agents.find((agent) => agent.id === 'takumi')!;
+  const otherAgents = agents.filter((agent) => agent.id !== 'takumi');
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -173,28 +197,49 @@ export const Dashboard: React.FC = () => {
       {/* メインコンテンツ */}
       <main className="max-w-[1920px] mx-auto p-6">
         {/* タスク概要 */}
-        <div className="bg-white rounded-xl border border-slate-200 p-6 mb-6 shadow-sm">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h2 className="text-lg font-semibold text-slate-900">Current Task</h2>
-              <p className="text-2xl font-bold text-slate-800 mt-1">{currentTask}</p>
+        {currentRequest && (
+          <div className="bg-white rounded-xl border border-slate-200 p-6 mb-6 shadow-sm">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h2 className="text-lg font-semibold text-slate-900">Current Task</h2>
+                <p className="text-2xl font-bold text-slate-800 mt-1">{currentRequest}</p>
+              </div>
+              <div className="text-right">
+                <p className="text-sm text-slate-500 mb-1">Progress</p>
+                <p className="text-3xl font-bold text-blue-600">{Math.round(progress)}%</p>
+              </div>
             </div>
-            <div className="text-right">
-              <p className="text-sm text-slate-500 mb-1">Progress</p>
-              <p className="text-3xl font-bold text-blue-600">{Math.round(progress)}%</p>
+            <div className="w-full bg-slate-100 rounded-full h-3 overflow-hidden">
+              <div 
+                className="bg-gradient-to-r from-blue-500 to-indigo-500 h-full rounded-full transition-all duration-500"
+                style={{ width: `${Math.min(progress, 100)}%` }}
+              />
             </div>
           </div>
-          <div className="w-full bg-slate-100 rounded-full h-3 overflow-hidden">
-            <div 
-              className="bg-gradient-to-r from-blue-500 to-indigo-500 h-full rounded-full transition-all duration-500"
-              style={{ width: `${Math.min(progress, 100)}%` }}
-            />
-          </div>
+        )}
+
+        {/* 依頼フォーム */}
+        <div className="mb-6">
+          <RequestForm onSubmit={handleRequestSubmit} />
         </div>
 
-        {/* エージェントグリッド */}
+        {/* ユーザーカード */}
+        <div className="mb-6">
+          <UserCard currentRequest={currentRequest} />
+        </div>
+
+        {/* Takumiカード */}
+        <div className="mb-6">
+          <AgentCard
+            agent={takumi}
+            isActive={activeAgent === takumi.id}
+            logs={logs[takumi.id] || ['> Standby']}
+          />
+        </div>
+
+        {/* 他のエージェントとタスクキュー */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {agents.map((agent) => (
+          {otherAgents.map((agent) => (
             <AgentCard
               key={agent.id}
               agent={agent}
@@ -211,7 +256,7 @@ export const Dashboard: React.FC = () => {
         <div className="mt-8 bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
           <h3 className="text-lg font-semibold text-slate-900 mb-4">Workflow</h3>
           <div className="flex flex-wrap items-center gap-2 text-sm">
-            <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full font-medium">Request</span>
+            <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full font-medium">Client Request</span>
             <span className="text-slate-400">→</span>
             <span className="px-3 py-1 bg-slate-100 text-slate-700 rounded-full">Takumi (Judge)</span>
             <span className="text-slate-400">→</span>
