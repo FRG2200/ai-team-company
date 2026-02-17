@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState, useEffect } from 'react';
 import { AgentCard } from './AgentCard';
 import { TaskQueue } from './TaskQueue';
