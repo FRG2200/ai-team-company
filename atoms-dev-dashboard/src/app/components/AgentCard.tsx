@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useEffect, useRef } from 'react';
 
 interface Agent {
@@ -14,9 +16,15 @@ interface AgentCardProps {
   agent: Agent;
   isActive: boolean;
   logs: string[];
+  size?: 'normal' | 'large';
 }
 
-export const AgentCard: React.FC<AgentCardProps> = ({ agent, isActive, logs }) => {
+export const AgentCard: React.FC<AgentCardProps> = ({ 
+  agent, 
+  isActive, 
+  logs,
+  size = 'normal' 
+}) => {
   const logsEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -35,34 +43,36 @@ export const AgentCard: React.FC<AgentCardProps> = ({ agent, isActive, logs }) =
     return 'Standby';
   };
 
+  const isLarge = size === 'large';
+
   return (
     <div 
       className={`bg-white rounded-xl border-2 transition-all duration-300 overflow-hidden ${
         isActive 
           ? 'border-blue-400 shadow-lg shadow-blue-100' 
           : 'border-slate-200 hover:border-slate-300'
-      }`}
+      } ${isLarge ? 'transform scale-105' : ''}`}
     >
       {/* ヘッダー */}
-      <div className={`${agent.color} text-white p-4`}>
+      <div className={`${agent.color} text-white ${isLarge ? 'p-6' : 'p-4'}`}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <span className="text-3xl">{agent.emoji}</span>
+            <span className={isLarge ? 'text-4xl' : 'text-3xl'}>{agent.emoji}</span>
             <div>
-              <h3 className="font-bold text-lg">{agent.name}</h3>
+              <h3 className={`font-bold ${isLarge ? 'text-xl' : 'text-lg'}`}>{agent.name}</h3>
               <p className="text-sm opacity-90">{agent.role}</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <div className={`w-3 h-3 rounded-full ${getStatusColor()}`} />
-            <span className="text-sm font-medium">{getStatusText()}</span>
+            <div className={`${isLarge ? 'w-4 h-4' : 'w-3 h-3'} rounded-full ${getStatusColor()}`} />
+            <span className={`font-medium ${isLarge ? 'text-base' : 'text-sm'}`}>{getStatusText()}</span>
           </div>
         </div>
-        <p className="text-sm mt-2 opacity-80">{agent.description}</p>
+        <p className={`mt-2 opacity-80 ${isLarge ? 'text-base' : 'text-sm'}`}>{agent.description}</p>
       </div>
 
       {/* ターミナル風ログ */}
-      <div className="bg-slate-900 p-4 h-48 overflow-hidden">
+      <div className={`bg-slate-900 p-4 ${isLarge ? 'h-56' : 'h-48'} overflow-hidden`}>
         <div className="flex items-center gap-2 mb-3 pb-2 border-b border-slate-700">
           <div className="flex gap-1.5">
             <div className="w-3 h-3 rounded-full bg-red-500" />
@@ -70,11 +80,11 @@ export const AgentCard: React.FC<AgentCardProps> = ({ agent, isActive, logs }) =
             <div className="w-3 h-3 rounded-full bg-green-500" />
           </div>
           <span className="text-xs text-slate-400 ml-2 font-mono">
-            {agent.name.toLowerCase()}@atoms.dev
+            {agent.name.toLowerCase()}@ai-team-company
           </span>
         </div>
         
-        <div className="font-mono text-sm space-y-1 h-32 overflow-y-auto scrollbar-hide">
+        <div className={`font-mono text-sm space-y-1 ${isLarge ? 'h-40' : 'h-32'} overflow-y-auto scrollbar-hide`}>
           {logs.map((log, index) => (
             <div 
               key={index} 

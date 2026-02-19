@@ -1,6 +1,9 @@
+'use client';
+
 import React, { useState, useEffect } from 'react';
+import { RequestForm } from './RequestForm';
+import { UserCard } from './UserCard';
 import { AgentCard } from './AgentCard';
-import { TaskQueue } from './TaskQueue';
 import { SystemStatus } from './SystemStatus';
 
 // 7人のエージェント定義
@@ -89,9 +92,8 @@ const generateMockLogs = (agentId: string) => {
 };
 
 export const Dashboard: React.FC = () => {
+  const [submittedRequest, setSubmittedRequest] = useState('');
   const [activeAgent, setActiveAgent] = useState('takumi');
-  const [currentTask, setCurrentTask] = useState('Landing Page Development');
-  const [progress, setProgress] = useState(0);
   const [logs, setLogs] = useState<Record<string, string[]>>({});
   const [currentTime, setCurrentTime] = useState(new Date());
 
@@ -102,7 +104,6 @@ export const Dashboard: React.FC = () => {
     });
     setLogs(initialLogs);
 
-    // 時計更新
     const timer = setInterval(() => {
       setCurrentTime(new Date());
     }, 1000);
@@ -113,12 +114,6 @@ export const Dashboard: React.FC = () => {
   // シミュレーション：タスク進行
   useEffect(() => {
     const interval = setInterval(() => {
-      setProgress((prev) => {
-        if (prev >= 100) return 0;
-        return prev + Math.random() * 2;
-      });
-
-      // ランダムにエージェントの状態を更新
       setActiveAgent((prev) => {
         const random = Math.random();
         if (random > 0.7) {
@@ -132,19 +127,26 @@ export const Dashboard: React.FC = () => {
     return () => clearInterval(interval);
   }, []);
 
+  const handleSubmitRequest = (request: string) => {
+    setSubmittedRequest(request);
+  };
+
+  const takumi = agents.find(a => a.id === 'takumi')!;
+  const otherAgents = agents.filter(a => a.id !== 'takumi');
+
   return (
     <div className="min-h-screen bg-slate-50">
       {/* ヘッダー */}
       <header className="bg-white border-b border-slate-200 sticky top-0 z-50">
-        <div className="max-w-[1920px] mx-auto px-6 py-4">
+        <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center">
                 <span className="text-white text-xl">🐾</span>
               </div>
               <div>
-                <h1 className="text-xl font-bold text-slate-900">atoms.dev</h1>
-                <p className="text-sm text-slate-500">AI Team Dashboard</p>
+                <h1 className="text-xl font-bold text-slate-900">Ai team company</h1>
+                <p className="text-sm text-slate-500">7 AI Agents Dashboard</p>
               </div>
             </div>
             
@@ -169,61 +171,84 @@ export const Dashboard: React.FC = () => {
       </header>
 
       {/* メインコンテンツ */}
-      <main className="max-w-[1920px] mx-auto p-6">
-        {/* タスク概要 */}
-        <div className="bg-white rounded-xl border border-slate-200 p-6 mb-6 shadow-sm">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h2 className="text-lg font-semibold text-slate-900">Current Task</h2>
-              <p className="text-2xl font-bold text-slate-800 mt-1">{currentTask}</p>
+      <main className="max-w-7xl mx-auto p-6 space-y-6">
+        
+        {/* 1. 依頼内容入力フォーム */}
+        <RequestForm onSubmit={handleSubmitRequest} />
+
+        {/* 2. ユーザーカード（依頼者）- 送信後に表示 */}
+        {submittedRequest && (
+          <>
+            <UserCard request={submittedRequest} />
+            
+            {/* 矢印 */}
+            <div className="flex justify-center">
+              <div className="text-3xl text-slate-400 animate-bounce">↓</div>
             </div>
-            <div className="text-right">
-              <p className="text-sm text-slate-500 mb-1">Progress</p>
-              <p className="text-3xl font-bold text-blue-600">{Math.round(progress)}%</p>
+          </>
+        )}
+
+        {/* 3. Takumi (COO) - 判断者 */}
+        <div className="relative">
+          {submittedRequest && (
+            <div className="absolute left-1/2 -translate-x-1/2 -top-3 bg-blue-600 text-white px-4 py-1 rounded-full text-sm font-bold z-10 shadow-md">
+              ↓ 最初の判断者
             </div>
+          )}
+          <AgentCard
+            agent={takumi}
+            isActive={activeAgent === 'takumi'}
+            logs={logs['takumi'] || ['> Standby']}
+            size="large"
+          />
+        </div>
+
+        {/* 矢印 */}
+        {submittedRequest && (
+          <div className="flex justify-center">
+            <div className="text-3xl text-slate-400 animate-bounce">↓</div>
           </div>
-          <div className="w-full bg-slate-100 rounded-full h-3 overflow-hidden">
-            <div 
-              className="bg-gradient-to-r from-blue-500 to-indigo-500 h-full rounded-full transition-all duration-500"
-              style={{ width: `${Math.min(progress, 100)}%` }}
-            />
+        )}
+
+        {/* 4. 残りの6人 - 実行チーム */}
+        <div>
+          <h2 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+            <span>👥</span>
+            <span>実行チーム</span>
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {otherAgents.map((agent) => (
+              <AgentCard
+                key={agent.id}
+                agent={agent}
+                isActive={activeAgent === agent.id}
+                logs={logs[agent.id] || ['> Standby']}
+              />
+            ))}
           </div>
         </div>
 
-        {/* エージェントグリッド */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {agents.map((agent) => (
-            <AgentCard
-              key={agent.id}
-              agent={agent}
-              isActive={activeAgent === agent.id}
-              logs={logs[agent.id] || ['> Standby']}
-            />
-          ))}
-          
-          {/* タスクキュー */}
-          <TaskQueue />
-        </div>
-
-        {/* フロー図 */}
-        <div className="mt-8 bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+        {/* ワークフロー図 */}
+        <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
           <h3 className="text-lg font-semibold text-slate-900 mb-4">Workflow</h3>
           <div className="flex flex-wrap items-center gap-2 text-sm">
-            <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full font-medium">Request</span>
+            <span className="px-3 py-1.5 bg-slate-100 text-slate-700 rounded-full font-medium">👤 User</span>
             <span className="text-slate-400">→</span>
-            <span className="px-3 py-1 bg-slate-100 text-slate-700 rounded-full">Takumi (Judge)</span>
+            <span className="px-3 py-1.5 bg-blue-100 text-blue-700 rounded-full font-bold shadow-sm">🎯 Takumi</span>
             <span className="text-slate-400">→</span>
-            <span className="px-3 py-1 bg-slate-100 text-slate-700 rounded-full">Kenta (Research)</span>
+            <span className="px-3 py-1.5 bg-slate-100 text-slate-700 rounded-full">📋 Misaki</span>
             <span className="text-slate-400">→</span>
-            <span className="px-3 py-1 bg-slate-100 text-slate-700 rounded-full">Sho (Design)</span>
+            <span className="px-3 py-1.5 bg-slate-100 text-slate-700 rounded-full">📊 Kenta</span>
             <span className="text-slate-400">→</span>
-            <span className="px-3 py-1 bg-slate-100 text-slate-700 rounded-full">Ren (Build)</span>
+            <span className="px-3 py-1.5 bg-slate-100 text-slate-700 rounded-full">🏗️ Sho</span>
             <span className="text-slate-400">→</span>
-            <span className="px-3 py-1 bg-slate-100 text-slate-700 rounded-full">Satoko (SEO)</span>
+            <span className="px-3 py-1.5 bg-slate-100 text-slate-700 rounded-full">💻 Ren</span>
             <span className="text-slate-400">→</span>
-            <span className="px-3 py-1 bg-slate-100 text-slate-700 rounded-full">Makoto (Review)</span>
+            <span className="px-3 py-1.5 bg-slate-100 text-slate-700 rounded-full">📈 Satoko</span>
             <span className="text-slate-400">→</span>
-            <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full font-medium">Delivery</span>
+            <span className="px-3 py-1.5 bg-slate-100 text-slate-700 rounded-full">📊 Makoto</span>
+            <span className="text-slate-400">→</span>
+            <span className="px-3 py-1.5 bg-green-100 text-green-700 rounded-full font-medium">✅ Delivery</span>
           </div>
         </div>
       </main>
