@@ -9,6 +9,7 @@ import {
   Layout, Code2, Eye, MessageCircle, Cpu, Layers, Zap
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import Link from 'next/link';
 
 // Types
 interface Message {
@@ -477,6 +478,13 @@ export default function ManusStyleDashboard() {
               +3
             </div>
           </div>
+          <Link
+            href="/influencer"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-400 hover:to-purple-500 text-white text-[12px] font-semibold rounded-xl shadow-lg shadow-purple-500/20 transition-all"
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            AI インフルエンサー
+          </Link>
           <button className="p-2 hover:bg-white/50 rounded-xl transition-all">
             <Settings className="w-5 h-5 text-slate-400" />
           </button>
